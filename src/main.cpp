@@ -2,7 +2,7 @@
 #include <cmath>
 #include <SFML/Graphics.hpp>
 
-const double gravityAccel = 0.0001;
+const double gravityAccel = 1000;
 
 struct velocity
 {
@@ -30,7 +30,7 @@ signed main()
     sf::CircleShape mass(20);
     mass.setFillColor(sf::Color::Black);
     mass.setOrigin(mass.getRadius(), mass.getRadius());
-    mass.setPosition(100, 680);
+    mass.setPosition(100, 679);
 
     sf::RectangleShape floor({1200, 100});
     floor.setFillColor(sf::Color::Red);
@@ -43,14 +43,15 @@ signed main()
 
     sf::Clock clock;
 
-    velocity velocityInput = {0.2, -0.2};
+    velocity velocityInput = {300, -1000};
     //std::cin >> velocityInput.x >> velocityInput.y;
     velocityX = velocityInput.x;
     velocityY = velocityInput.y;
     
     while(window.isOpen())
     {
-        float dt = clock.getElapsedTime().asSeconds();
+        float dt = clock.restart().asSeconds();
+
         window.clear(sf::Color(200, 255, 200));
         sf::Event event;
         while(window.pollEvent(event))
@@ -61,7 +62,7 @@ signed main()
         speed = std::sqrt((velocityX * velocityX) + (velocityY * velocityY));
 
         {// acceleration:
-            if(mass.getPosition().y < 700)
+            if(mass.getPosition().y < 680)
             {
                 velocityY += gravityAccel * dt;
             }
