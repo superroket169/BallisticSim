@@ -4,7 +4,7 @@
 
 // yerçekimi sabiti
 const double gravityAccel = 1000;
-const std::string trueTypeFormatPath = "DejaVuSans-Bold.ttf";
+const std::string trueTypeFormatPath = "../BallisticSim/assets/fonts/DejaVuSans-Bold.ttf";
 
 struct velocity
 {
@@ -14,6 +14,7 @@ struct velocity
 
 bool button(int x, int y, int w, int h, std::string str, sf::RenderWindow &window ,sf::Color color, sf::Font &font)
 {
+    static sf::Clock timer;
     sf::Text boxText(str, font, 24);
     boxText.setFillColor(sf::Color::Black);
     boxText.setPosition(x + 50, y + (h/2) - 15);
@@ -28,19 +29,22 @@ bool button(int x, int y, int w, int h, std::string str, sf::RenderWindow &windo
     sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
     sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
 
-    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-        if (b.getGlobalBounds().contains(worldPos))
+    if(sf::Mouse::isButtonPressed(sf::Mouse::Left))
+        if(b.getGlobalBounds().contains(worldPos) && timer.getElapsedTime().asMilliseconds() > 500)
+        {
+            timer.restart();
             return 1;
-        
+        }
     
     return 0;
 }
-std::string typeString = "m";
+std::string typeString = "";
 
 signed main()
 {
     sf::Font font;
-    font.loadFromFile(trueTypeFormatPath);
+    if(!font.loadFromFile(trueTypeFormatPath))
+        std::cerr << "File cant opened\n";
 
     const int floorHeight = 100;
     const int massRadius = 20;
@@ -64,10 +68,18 @@ signed main()
 
     sf::Clock clock;
 
-    velocity velocityInput = {300, -1000};
+    velocity velocityInput = {0, -1000};
     //std::cin >> velocityInput.x >> velocityInput.y;
     velocityX = velocityInput.x;
     velocityY = velocityInput.y;
+
+    sf::Color buttonColor1 = {100, 100, 255};
+    sf::Color buttonColor2 = {50, 50, 255};
+    sf::Color buttonColor = buttonColor1;
+
+    bool inTyping = false;
+    bool justEntered = false;
+    bool grounded = false;
     
     while(window.isOpen())
     {
@@ -77,30 +89,87 @@ signed main()
         sf::Event event;
         while(window.pollEvent(event))
         {
-            if(event.type == sf::Event::Closed || event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) window.close();
+            if(event.type == sf::Event::Closed)
+                window.close();
+
+            if(event.type == sf::Event::KeyPressed)
+            {
+                if(event.key.code == sf::Keyboard::Escape)
+                    window.close();
+
+                if(event.key.code == sf::Keyboard::Enter)
+                {
+                    inTyping = false;
+                    buttonColor = buttonColor1;
+                    justEntered = true;
+                }
+            }
+
+            if(event.type == sf::Event::TextEntered && inTyping)
+            {
+                if(event.text.unicode == 8)
+                    typeString.pop_back();
+                
+                if(event.text.unicode < 128)
+                {
+                    char c = static_cast<char>(event.text.unicode);
+                    // only numbers
+                    if((c >= '0' && c <= '9') || c == '-')
+                        typeString += c;
+                }
+            }
         }
-        if(button(50, 50, 200, 100, typeString, window, sf::Color::Blue, font));
+
+        if(button(50, 50, 200, 100, typeString, window, buttonColor, font))
+        {
+            buttonColor = buttonColor2;
+            inTyping = true;
+        }
 
         speed = std::sqrt((velocityX * velocityX) + (velocityY * velocityY));
 
-        {// acceleration:
-            if(mass.getPosition().y < (windowY - floorHeight - massRadius))
+        if(!inTyping && justEntered)
+        {
+            justEntered = false;
+            grounded = false;
+            try
             {
+                velocityY += - std::stoi(typeString);
+            }
+            catch(std::exception e)
+            {
+                std::cerr << "mmew\n";
+            }
+        }
+
+        {// acceleration:
+            float groundY = windowY - floorHeight - massRadius;
+
+            // gravity sadece havadayken
+            if(!grounded)
                 velocityY += gravityAccel * dt;
+
+            // hareket
+            mass.move(velocityX * dt, velocityY * dt);
+
+            // zemin çarpışması
+            if(mass.getPosition().y >= groundY)
+            {
+                mass.setPosition(mass.getPosition().x, groundY);
+                velocityY = 0;
+                grounded = true;
             }
             else
             {
-                velocityX = 0;
-                velocityY = 0;
+                grounded = false;
             }
-            mass.move(velocityX * dt, velocityY * dt);
         }
 
         window.draw(floor);
         window.draw(mass);
         window.display();
 
-        std::cout << int(velocityY * 100) << "\n";
+        //std::cout << int(velocityY * 100) << "\n";
     }
 
     return 0;
