@@ -1,10 +1,11 @@
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
+#include <filesystem>
 
 // yerçekimi sabiti
 const double gravityAccel = 1000;
-const std::string trueTypeFormatPath = "../BallisticSim/assets/fonts/DejaVuSans-Bold.ttf";
+const std::string trueTypeFormatPath = "assets/fonts/DejaVuSans-Bold.ttf";
 
 struct velocity
 {
@@ -42,6 +43,10 @@ std::string typeString = "";
 
 signed main()
 {
+    std::cout << "CWD = "
+              << std::filesystem::current_path()
+              << std::endl;
+
     sf::Font font;
     if(!font.loadFromFile(trueTypeFormatPath))
         std::cerr << "File cant opened\n";
@@ -107,7 +112,7 @@ signed main()
 
             if(event.type == sf::Event::TextEntered && inTyping)
             {
-                if(event.text.unicode == 8)
+                if(event.text.unicode == 8 && !typeString.empty())
                     typeString.pop_back();
                 
                 if(event.text.unicode < 128)
