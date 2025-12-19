@@ -18,7 +18,7 @@ bool button(int x, int y, int w, int h, std::string str, sf::RenderWindow &windo
     static sf::Clock timer;
     sf::Text boxText(str, font, 24);
     boxText.setFillColor(sf::Color::Black);
-    boxText.setPosition(x + 50, y + (h/2) - 15);
+    boxText.setPosition(x + 10, y + 10);
 
     sf::RectangleShape b;
     b.setSize({(float)w, (float)h});
@@ -39,7 +39,8 @@ bool button(int x, int y, int w, int h, std::string str, sf::RenderWindow &windo
     
     return 0;
 }
-std::string typeString = "";
+std::string typeStringFirstButton = "";
+std::string typeStringSecondButton = "";
 
 signed main()
 {
@@ -73,17 +74,23 @@ signed main()
 
     sf::Clock clock;
 
-    velocity velocityInput = {0, -1000};
+    velocity velocityInput = {0, 0};
     //std::cin >> velocityInput.x >> velocityInput.y;
     velocityX = velocityInput.x;
     velocityY = velocityInput.y;
 
-    sf::Color buttonColor1 = {100, 100, 255};
-    sf::Color buttonColor2 = {50, 50, 255};
-    sf::Color buttonColor = buttonColor1;
+    sf::Color firstButtonColor1 = {100, 100, 255};
+    sf::Color firstButtonColor2 = {50, 50, 255};
+    sf::Color firstButtonColor = firstButtonColor1;
 
-    bool inTyping = false;
-    bool justEntered = false;
+    sf::Color secondButtonColor1 = {100, 100, 255};
+    sf::Color secondButtonColor2 = {50, 50, 255};
+    sf::Color secondButtonColor = secondButtonColor1;
+
+    bool inTypingFirstButton = false;
+    bool justEnteredFirstButton = false;
+    bool inTypingSecondButton = false;
+    bool justEnteredSecondButton = false;
     bool grounded = false;
     
     while(window.isOpen())
@@ -104,42 +111,90 @@ signed main()
 
                 if(event.key.code == sf::Keyboard::Enter)
                 {
-                    inTyping = false;
-                    buttonColor = buttonColor1;
-                    justEntered = true;
+                    if(inTypingFirstButton)
+                    {
+                        inTypingFirstButton = false;
+                        firstButtonColor = firstButtonColor1;
+                        justEnteredFirstButton = true;
+                    }
+                    else if(inTypingSecondButton)
+                    {
+                        inTypingSecondButton = false;
+                        secondButtonColor = firstButtonColor1;
+                        justEnteredSecondButton = true;
+                    }
+
+                    //inTypingFirstButton = false;
+                    //firstButtonColor = firstButtonColor1;
+                    //justEnteredFirstButton = true;
                 }
             }
 
-            if(event.type == sf::Event::TextEntered && inTyping)
+            if(event.type == sf::Event::TextEntered && inTypingFirstButton)
             {
-                if(event.text.unicode == 8 && !typeString.empty())
-                    typeString.pop_back();
+                if(event.text.unicode == 8 && !typeStringFirstButton.empty())
+                    typeStringFirstButton.pop_back();
                 
                 if(event.text.unicode < 128)
                 {
                     char c = static_cast<char>(event.text.unicode);
                     // only numbers
                     if((c >= '0' && c <= '9') || c == '-')
-                        typeString += c;
+                        typeStringFirstButton += c;
+                }
+            }
+            if(event.type == sf::Event::TextEntered && inTypingSecondButton)
+            {
+                if(event.text.unicode == 8 && !typeStringSecondButton.empty())
+                    typeStringSecondButton.pop_back();
+                
+                if(event.text.unicode < 128)
+                {
+                    char c = static_cast<char>(event.text.unicode);
+                    // only numbers
+                    if((c >= '0' && c <= '9') || c == '-')
+                        typeStringSecondButton += c;
                 }
             }
         }
 
-        if(button(50, 50, 200, 100, typeString, window, buttonColor, font))
+        // first button
+        if(button(20, 20, 100, 50, typeStringFirstButton, window, firstButtonColor, font) && !inTypingSecondButton)
         {
-            buttonColor = buttonColor2;
-            inTyping = true;
+            firstButtonColor = firstButtonColor2;
+            inTypingFirstButton = true;
+        }
+
+        // second button
+        if(button(140, 20, 100, 50, typeStringSecondButton, window, secondButtonColor, font) && !inTypingFirstButton)
+        {
+            secondButtonColor = secondButtonColor2;
+            inTypingSecondButton = true;
         }
 
         speed = std::sqrt((velocityX * velocityX) + (velocityY * velocityY));
 
-        if(!inTyping && justEntered)
+        if(!inTypingFirstButton && justEnteredFirstButton)
         {
-            justEntered = false;
+            justEnteredFirstButton = false;
             grounded = false;
             try
             {
-                velocityY += - std::stoi(typeString);
+                velocityY -= std::stoi(typeStringFirstButton);
+            }
+            catch(std::exception e)
+            {
+                std::cerr << "mmew\n";
+            }
+        }
+
+        if(!inTypingSecondButton && justEnteredSecondButton)
+        {
+            justEnteredSecondButton = false;
+            grounded = false;
+            try
+            {
+                velocityX = std::stoi(typeStringSecondButton);
             }
             catch(std::exception e)
             {
